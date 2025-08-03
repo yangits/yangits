@@ -89,18 +89,18 @@ backctx.font = "22px Arial";backctx.lineWidth=3;
 let currentPiece,nextPiece,arena,score,Level,best,downspeed;
 let gameOver = false,Pause=false,lastTime=Infinity;
 const PIECES = [
-[[0, 0], [1,0], [0,1], [1,1]],// O
+[[0, 0], [1,0], [0,-1], [1,-1]],// O
 [[-1,0], [0,0], [1,0], [2,0]],// I
-[[-1,1], [0,0], [1,0], [0,1]],// S
-[[-1,0], [0,0], [1,0], [0,1]],// T
-[[-1,0], [0,0], [1,0], [1,1]],// L
-[[-1,0], [0,0], [1,0], [-1,1]],// J
-[[-1,0], [0,0], [0,1], [1,1]]];// Z
+[[-1,-1], [0,0], [1,0], [0,-1]],// Z
+[[-1,0], [0,0], [1,0], [0,-1]],// T
+[[-1,0], [0,0], [1,0], [1,-1]],// J
+[[-1,0], [0,0], [1,0], [-1,-1]],// L
+[[-1,0], [0,0], [0,-1], [1,-1]]];// S
 function createPiece(){
     const piece = PIECES[Math.floor(Math.random() * PIECES.length)];
     return {
         shape: piece,
-        x: Math.floor(COLS/2-1),
+        x: COLS/2-1,
         y: 0
     };
 }
@@ -110,7 +110,7 @@ function drawBlock(ctx,x, y){
 }
 function backdraw(){
     backctx.clearRect(0, 0, backcanvas.width, backcanvas.height);
-    backctx.fillStyle = '#9aa5a3';backctx.strokeStyle = '#9aa5a3';
+    backctx.fillStyle = '#999';backctx.strokeStyle = '#999';
     arena.forEach((row, y) => {
         row.forEach((value, x) => {drawBlock(backctx,x, y)});
     });
@@ -175,7 +175,7 @@ function clearLines(){
     if(score>=10000*(Level+1)){Level++;downspeed=(0.8-Level*0.001)**Level*1000};
 }
 function rotatePiece(){
-    if(Pause || gameOver || currentPiece.shape==PIECES[0])return;
+    if(currentPiece.shape==PIECES[0])return;
     const rotated = currentPiece.shape.map(Block => [-Block[1], Block[0]]);
     const original = currentPiece.shape;
     currentPiece.shape = rotated;
@@ -187,18 +187,9 @@ function rotatePiece(){
     }
     currentPiece.shape = original;
 }
-function moveLeft(){
-    if (Pause || gameOver) return;
-    if (!isCollision(currentPiece, -1, 0))currentPiece.x--
-}
-function moveRight(){
-    if (Pause || gameOver) return;
-    if (!isCollision(currentPiece, 1, 0))currentPiece.x++;
-}
-function moveDown(){
-    if (Pause || gameOver) return;
-    if (!isCollision(currentPiece, 0, 1)){currentPiece.y++;}else{lastTime=0;}
-}
+function moveLeft(){if (!isCollision(currentPiece, -1, 0))currentPiece.x--;}
+function moveRight(){if (!isCollision(currentPiece, 1, 0))currentPiece.x++;}
+function moveDown(){if (!isCollision(currentPiece, 0, 1)){currentPiece.y++;}else{lastTime=0;}}
 function clearItem(){
     localStorage.removeItem("arena");
     localStorage.removeItem("score");
@@ -252,6 +243,7 @@ function update(){
 }
 let isPressed = {},startTime={}
 function startclick(callback,key){
+    if (Pause || gameOver) return;
     callback();isPressed[key]= true;
     function startLoop(){
         if(!isPressed[key])return;
