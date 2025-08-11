@@ -3,48 +3,46 @@
 <head>
 <meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="renderer" content="webkit">
-<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
-<title>俄罗斯方块</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>王中王游戏</title>
 <style>
 body{
     width: 100%;
     max-width: 500px;
-    background: #019CD6;
+    background: #09d;
     user-select: none;
     text-align: center;
     margin: auto;
 }
 .btn{
-    border: 1px solid #ddc905;
+    border: 0px;
     border-radius: 50%;
-    background: linear-gradient(145deg, #decb02, #c1b002);
+    background: linear-gradient(145deg, #dc0, #cb0);
     width: 60px;
     height: 60px;
-    box-shadow:  4px 4px 8px #555555,
-    -4px -4px 8px #7ed2d2;
+    box-shadow:  4px 4px 8px #555,
+    -4px -4px 8px #7dd;
     margin: 0px 2px;
 }
-.btn.small{
+.small{
     width: 26px;
     height: 26px;
 }
-.btn.big{
+.big{
     width: 85px;
     height: 85px;
-    box-shadow:  8px 8px 20px #555555,
-    -8px -8px 20px #7ed2d2;
 }
 .active{
-    background: linear-gradient(145deg, #a69700, #c5b400);
-    box-shadow:  2px 2px 4px #555555,
-    -2px -2px 4px #7ed2d2;
+    background: linear-gradient(145deg, #a90, #cb0);
+    box-shadow:  2px 2px 4px #555,
+    -2px -2px 4px #7dd;
 }
 canvas{
-    background-color: #9facaa;
+    background-color: #9aa;
     margin-top: 10px;
     width: 66%;
     border: 20px inset;
-    border-color: #0a90bf #4dbde3 #3ab3d8 #019CD6;
+    border-color: #08b #0ae #07b #09e;
 }
 .controller{
     width: 85%;
@@ -59,224 +57,252 @@ canvas{
 <body>
 <canvas id="game"></canvas>
 <div style="text-align: right;margin-right: 10%;">
-    <button class="btn small" key="start"></button>
+    <button class="btn small" key="start" id="start"></button>
     <span style="font-size: 12px;">开始</span>
     <button class="btn small" key="reset"></button>
     <span style="font-size: 12px;">复位</span>
 </div>
 <div class="controller">
     <div>
-        <button class="btn" key="rotate">上</button><br>
+        <button class="btn" key="up">上</button><br>
         <button class="btn" key="left">左</button>&emsp;&emsp;
         <button class="btn" key="right">右</button><br>
         <button class="btn" key="down">下</button>
     </div>
-    <button class="btn big" key="rotate">旋转</button>
+    <button class="btn big" key="rotate" id="rotate">旋转</button>
 </div>
 <script>
 const Gamecanvas = document.getElementById('game');
-const Gamectx = Gamecanvas.getContext('2d');
-const backcanvas = document.createElement('canvas');
-const backctx = backcanvas.getContext('2d');
-const Block = 20,COLS = 10,ROWS = 20;
-Gamecanvas.width = Block * COLS+100;
-Gamecanvas.height = Block * ROWS;
-backcanvas.width = Block * COLS+100;
-backcanvas.height = Block * ROWS;
-Gamectx.font = "22px Arial";Gamectx.lineWidth=3;
-Gamectx.fillStyle = '#000';Gamectx.strokeStyle = '#000';
-backctx.font = "22px Arial";backctx.lineWidth=3;
-let currentPiece,nextPiece,arena,score,Level,best,downspeed;
-let gameOver = false,Pause=false,lastTime=Infinity;
-const PIECES = [
-[[0, 0], [1,0], [0,-1], [1,-1]],// O
-[[-1,0], [0,0], [1,0], [2,0]],// I
-[[-1,-1], [0,0], [1,0], [0,-1]],// Z
-[[-1,0], [0,0], [1,0], [0,-1]],// T
-[[-1,0], [0,0], [1,0], [1,-1]],// J
-[[-1,0], [0,0], [1,0], [-1,-1]],// L
-[[-1,0], [0,0], [0,-1], [1,-1]]];// S
-function createPiece(){
-    const piece = PIECES[Math.floor(Math.random() * PIECES.length)];
-    return {
-        shape: piece,
-        x: COLS/2-1,
-        y: 0
-    };
-}
-function drawBlock(ctx,x, y){
-    ctx.fillRect((x+0.3) * Block, (y+0.3) * Block, Block*0.4, Block*0.4);
-    ctx.strokeRect((x+0.125) * Block, (y+0.125) * Block, Block*0.75, Block*0.75);
-}
-function backdraw(){
-    backctx.clearRect(0, 0, backcanvas.width, backcanvas.height);
-    backctx.fillStyle = '#999';backctx.strokeStyle = '#999';
-    arena.forEach((row, y) => {
-        row.forEach((value, x) => {drawBlock(backctx,x, y)});
-    });
-    for(let i=0;i<4;i++){
-        for(let j=0;j<4;j++)drawBlock(backctx,COLS+i+0.5, j+7);
-    }
-    backctx.fillStyle = '#000';backctx.strokeStyle = '#000';
-    if(!gameOver){
-        arena.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if(value)drawBlock(backctx,x, y)});
-        });
-        if(nextPiece){
-            nextPiece.shape.forEach(Block => {
-            drawBlock(backctx,COLS+1.5 + Block[0],  8+ Block[1]);});}
-    }
-    backctx.moveTo(Block * COLS+3,0); backctx.lineTo(Block * COLS+3,Block * ROWS); backctx.stroke(); 
-    backctx.fillText("Score", Block * COLS+10,Block*1.5);
-    backctx.fillText(score, Block * COLS+10,Block*3);
-    backctx.fillText("Level", Block * COLS+10,Block*4.5);
-    backctx.fillText(Level, Block * COLS+10,Block*6);
-    backctx.fillText("Best", Block * COLS+10,Block*12.5);
-    backctx.fillText(best, Block * COLS+10,Block*14);
-    if(Pause)backctx.fillText("Pause", Block * COLS+10,Block*16);
-}
-function draw(){
+const Gamectx = Gamecanvas.getContext('2d', {willReadFrequently: true});
+const Block = 16,Cols = 10,Rows = 20;
+Gamecanvas.width = Block * (Cols+5);
+Gamecanvas.height = Block * Rows;
+Gamectx.font = "20px Arial";Gamectx.lineWidth=2;
+document.addEventListener('touchstart', (e) =>{e.preventDefault();
+    e.target.closest('button').classList.add('active');}, {passive:false});
+document.addEventListener('touchend', (e) =>{
+    e.target.closest('button').classList.remove('active');});
+const WzwGame = {
+Games: ['俄罗斯方块','贪吃蛇'], Gameindex: 0,
+Score: null, Level: null, Best: null, CanvasData: null,
+init(){
+    this.Best=this.Itemval("Best",Array(this.Games.length).fill(0));
+    this.Gameindex=this.Itemval("Gameindex",this.Gameindex);
+    this.Score=this.Itemval("Score",0);this.Level=this.Itemval("Level",0);this.DrawGame();
+    document.ontouchstart=(e) =>{this.TouchGame(e.target.getAttribute("key"))};
+    document.onmousedown=(e) =>{this.TouchGame(e.target.getAttribute("key"))};
+    if(localStorage.getItem("Gameindex")){this.TouchGame("start")};
+},
+TouchGame(key){
+    switch (key){
+    case "start":localStorage.setItem("Gameindex",this.Gameindex);
+        [TetrisGame,SnakeGame][this.Gameindex]();break;
+    case "rotate":this.Gameindex=this.Gameindex<this.Games.length-1?
+        this.Gameindex+1:0;this.DrawGame();break;
+    case "left":{this.Level=this.Level>0?this.Level-1:15;this.DrawGame()};break;
+    case "right":{this.Level=this.Level<15?this.Level+1:0;this.DrawGame()};break;}
+},
+ClearItem(name){
+    localStorage.removeItem(name);
+    localStorage.removeItem("Gameindex");
+    localStorage.removeItem("Score");
+    localStorage.removeItem("Level");
+},
+SaveItem(name,val){
+    localStorage.setItem("Best",JSON.stringify(this.Best));
+    localStorage.setItem(name,JSON.stringify(val));
+    localStorage.setItem("Score",this.Score);
+    localStorage.setItem("Level",this.Level);
+},
+Itemval(name,val){
+    return localStorage.getItem(name)?JSON.parse(localStorage.getItem(name)):val;
+},
+DrawBlock(x, y){
+    Gamectx.fillRect((x+0.3) * Block, (y+0.3) * Block, Block*0.4, Block*0.4);
+    Gamectx.strokeRect((x+0.125) * Block, (y+0.125) * Block, Block*0.75, Block*0.75);
+},
+DrawGame(){
     Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.drawImage(backcanvas,
-        0,0,backcanvas.width,backcanvas.height,
-        0,0,backcanvas.width,backcanvas.height)
-    if (currentPiece && !gameOver){
-        currentPiece.shape.forEach(Block =>{
-            drawBlock(Gamectx,currentPiece.x + Block[0], currentPiece.y + Block[1]);});
-    }
-}
-function isCollision(piece, offsetX, offsetY){
-    return piece.shape.some(Block => {
-        const x = piece.x + Block[0] + offsetX;
-        const y = piece.y + Block[1] + offsetY;
-        return x < 0 || x >= COLS || y >= ROWS || (y >= 0 && arena[y][x]);
+    Gamectx.fillStyle = '#999';Gamectx.strokeStyle = '#999';
+    for(let i=0;i<Rows;i++){
+        for(let j=0;j<Cols;j++){this.DrawBlock(j, i)};}
+    Gamectx.fillStyle = '#000';Gamectx.strokeStyle = '#000';
+    Gamectx.moveTo(Block * Cols+3,0); Gamectx.lineTo(Block * Cols+3,Block * Rows); Gamectx.stroke(); 
+    Gamectx.fillText("分数", Block * Cols+10,Block*2);
+    Gamectx.fillText("等级", Block * Cols+10,Block*5.5);
+    Gamectx.fillText("最高分", Block * Cols+10,Block*14);
+    this.CanvasData= Gamectx.getImageData(0, 0, Gamecanvas.width, Gamecanvas.height);
+    Gamectx.fillText(this.Score, Block * Cols+10,Block*3.5);
+    Gamectx.fillText(this.Level, Block * Cols+10,Block*7);
+    Gamectx.fillText(this.Best[this.Gameindex], Block * Cols+10,Block*15.5);
+    Gamectx.fillText(this.Games[this.Gameindex], Block * 5-Gamectx.measureText(this.Games[this.Gameindex]).width/2,Block*5);
+}};
+function TetrisGame(){//俄罗斯方块
+let CurPiece,NextPiece,Pause=false,lastTime=Infinity;
+let arena =WzwGame.Itemval("arena",Array(Rows).fill().map(() => Array(Cols).fill(0)));
+let DownSpeek=0.8**WzwGame.Level*1000;
+const Pieces = [
+    [[0, 0], [1,0], [0,-1], [1,-1]],// O
+    [[-1,0], [0,0], [1,0], [2,0]],// I
+    [[-1,-1], [0,0], [1,0], [0,-1]],// Z
+    [[-1,0], [0,0], [1,0], [0,-1]],// T
+    [[-1,0], [0,0], [1,0], [1,-1]],// J
+    [[-1,0], [0,0], [1,0], [-1,-1]],// L
+    [[-1,0], [0,0], [0,-1], [1,-1]]];// S
+CurPiece = createPiece();NextPiece = createPiece();LoopTetris();
+function createPiece(){
+    const Piece = Pieces[Math.floor(Math.random() * Pieces.length)];
+    return {shape: Piece,x: Cols/2-1,y: 0};
+};
+function DrawTetris(){
+    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
+    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
+    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
+    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
+    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
+    arena.forEach((row, y) => {row.forEach((val, x) => {
+        if(val)WzwGame.DrawBlock(x, y)});});
+    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    NextPiece.shape.forEach(Block => {
+        WzwGame.DrawBlock(Cols + 1.5 + Block[0],  10 + Block[1]);});
+    CurPiece.shape.forEach(Block =>{
+        WzwGame.DrawBlock(CurPiece.x + Block[0], CurPiece.y + Block[1]);});
+};
+function isMove(Piece, offsetX, offsetY){
+    return Piece.shape.some(Block => {
+        const x = Piece.x + Block[0] + offsetX;
+        const y = Piece.y + Block[1] + offsetY;
+        return x < 0 || x >= Cols || y >= Rows || (y >= 0 && arena[y][x]);
     });
-}
+};
 function mergePiece(){
-    currentPiece.shape.forEach(Block => {
-        const x = currentPiece.x + Block[0];
-        const y = currentPiece.y + Block[1];
+    CurPiece.shape.forEach(Block => {
+        const x = CurPiece.x + Block[0];
+        const y = CurPiece.y + Block[1];
         if (y >= 0) arena[y][x] = 1;
     });
-}
+};
 function clearLines(){
     let lines = 0;
-    outer: for (let y = ROWS - 1; y >= 0; y--) {
-        for (let x = 0; x < COLS; x++) {
+    outer: for (let y = Rows - 1; y >= 0; y--) {
+        for (let x = 0; x < Cols; x++) {
             if (!arena[y][x]) continue outer;}
         const row = arena.splice(y, 1)[0].fill(0);
-        arena.unshift(row);
-        lines++;
-        y++;
+        arena.unshift(row);lines++;y++;
     }
-    score += [0, 100, 300, 500, 800][lines];
-    best=score>best?score:best;
-    if(score>=10000*(Level+1)){Level++;downspeed=(0.8-Level*0.001)**Level*1000};
-}
+    WzwGame.Score += [0, 100, 300, 500, 800][lines];
+    WzwGame.Best[WzwGame.Gameindex]=WzwGame.Score>WzwGame.Best[WzwGame.Gameindex]?
+        WzwGame.Score:WzwGame.Best[WzwGame.Gameindex];
+    if(WzwGame.Score>=10000*(WzwGame.Level+1)){
+        WzwGame.Level++;DownSpeek=0.8**WzwGame.Level*1000}
+};
 function rotatePiece(){
-    if(currentPiece.shape==PIECES[0])return;
-    const rotated = currentPiece.shape.map(Block => [-Block[1], Block[0]]);
-    const original = currentPiece.shape;
-    currentPiece.shape = rotated;
+    if(CurPiece.shape==Pieces[0])return;
+    const rotated = CurPiece.shape.map(Block => [-Block[1], Block[0]]);
+    const original = CurPiece.shape;
+    CurPiece.shape = rotated;
     const offsets = [0, 1, -1,2,-2];
     for (let offset of offsets){
-        currentPiece.x += offset;
-        if (!isCollision(currentPiece, 0, 0)) return;
-        currentPiece.x -= offset;
+        CurPiece.x += offset;
+        if (!isMove(CurPiece, 0, 0)) return;
+        CurPiece.x -= offset;
     }
-    currentPiece.shape = original;
-}
-function moveLeft(){if (!isCollision(currentPiece, -1, 0))currentPiece.x--;}
-function moveRight(){if (!isCollision(currentPiece, 1, 0))currentPiece.x++;}
-function moveDown(){if (!isCollision(currentPiece, 0, 1)){currentPiece.y++;}else{lastTime=0;}}
-function clearItem(){
-    localStorage.removeItem("arena");
-    localStorage.removeItem("score");
-    localStorage.removeItem("Level");
-}
-function saveItem(){
-    localStorage.setItem("best",best);
-    localStorage.setItem("arena",JSON.stringify(arena));
-    localStorage.setItem("score",score);
-    localStorage.setItem("Level",Level);
-}
-function Itemval(name,val){
-    return localStorage.getItem(name)?parseInt(localStorage.getItem(name)):val
-}
-function loadGame(){
-    arena = localStorage.getItem("arena")?
-        JSON.parse(localStorage.getItem("arena")):
-        Array(ROWS).fill().map(() => Array(COLS).fill(0));
-    score = Itemval("score",0);Level=Itemval("Level",0);best=Itemval("best",0);
-    downspeed=(0.8-Level*0.001)**Level*1000;
-    currentPiece = createPiece();
-    nextPiece =  createPiece();
-    backdraw();update();
-}
-function startGame(){
-    if(gameOver){
-        gameOver = false;lastTime = Date.now();loadGame();
-    }else{
-        Pause=Pause?false:true;
-        backdraw();update();
-    }
-}
-function resetGame(){
-    Pause=false;gameOver = true;clearItem();loadGame();
-}
-function update(){
-    if(Date.now()-lastTime > downspeed){
-        if(!isCollision(currentPiece, 0, 1)){
-            currentPiece.y++;
-        }else{
-            isPressed["down"]=false;
+    CurPiece.shape = original;
+};
+function moveLeft(){if(!isMove(CurPiece, -1, 0))CurPiece.x--;};
+function moveRight(){if(!isMove(CurPiece, 1, 0))CurPiece.x++;};
+function LoopTetris(){
+    if(Date.now()-lastTime > DownSpeek){
+        if(!isMove(CurPiece, 0, 1)){CurPiece.y++;
+        }else{DownSpeek=0.8**WzwGame.Level*1000;
             mergePiece();clearLines();
-            currentPiece = nextPiece;
-            nextPiece = createPiece();
-            saveItem();backdraw();
-            if (isCollision(currentPiece, 0, 0))resetGame();
-        }lastTime = Date.now();
+            CurPiece = NextPiece;
+            NextPiece = createPiece();
+            WzwGame.SaveItem("arena",arena);
+            if (isMove(CurPiece, 0, 0)){
+                Pause=true;WzwGame.ClearItem("arena");
+                setTimeout(()=>{WzwGame.init()},500);};
+        };lastTime = Date.now();
     }
-    draw();if(Pause || gameOver)return;
-    requestAnimationFrame(update);
-}
-let isPressed = {},startTime={}
+    if(Pause)return;DrawTetris();
+    requestAnimationFrame(LoopTetris);
+};
+let isPressed = {},startTime={};
 function startclick(callback,key){
-    if (Pause || gameOver) return;
-    callback();isPressed[key]= true;
+    if (Pause) return;callback();
+    isPressed[key]= true;
     function startLoop(){
         if(!isPressed[key])return;
-        callback();setTimeout(startLoop, 20);
-    }
-    if(key==="down"){startLoop();return}
+        callback();setTimeout(startLoop, 12);}
     clearTimeout(startTime[key]);
-    startTime[key]= setTimeout(startLoop, 180);
-}
-document.addEventListener('touchstart', (event) =>{
-    event.preventDefault();event.target.closest('button').classList.add('active');
-    touchEvent(event.target.getAttribute("key"))}, {passive:false});
-document.addEventListener('touchend', (event) =>{
-    event.target.closest('button').classList.remove('active');
-    isPressed[event.target.getAttribute("key")]= false;});
-document.addEventListener('touchcancel', (event) =>{
-    event.target.closest('button').classList.remove('active');
-    isPressed[event.target.getAttribute("key")]= false;});
-function touchEvent(key){
-    if(gameOver){
-        if(key==="left"){Level=Level>0?Level-1:15;}
-        if(key==="right"){Level=Level<15?Level+1:0}
-        localStorage.setItem("Level",Level);
-        backdraw();draw();};
+    startTime[key]= setTimeout(startLoop, 150);
+};
+document.ontouchstart=(e) =>{TouchTeris(e.target.getAttribute("key"))};
+document.onmousedown=(e) =>{TouchTeris(e.target.getAttribute("key"))};
+document.ontouchend=(e) =>{DownSpeek=0.8**WzwGame.Level*1000;isPressed[e.target.getAttribute("key")]= false;};
+function TouchTeris(key){
     switch (key){
-    case "reset":resetGame();break;
-    case "start":startGame();break;
-    case "rotate":startclick(rotatePiece,key);break;
-    case "down":startclick(moveDown,key);break;
+    case "reset":Pause=true;WzwGame.ClearItem("arena");WzwGame.init();break;
+    case "start":Pause=Pause?false:true;LoopTetris();DrawTetris();break;
+    case "rotate":case "up":startclick(rotatePiece,key);break;
+    case "down":lastTime=0;DownSpeek=12;break;
     case "left":startclick(moveLeft,key);break;
     case "right":startclick(moveRight,key);break;}
+}}
+function SnakeGame(){//贪吃蛇
+let [Snake,Direction] = WzwGame.Itemval("Snake",[[{x: 5, y: 5},{x: 5, y: 4},{x: 5, y: 3}],{x: 0, y: 1}]);
+let Pause=false,lastTime=-Infinity,MoveSpeek= 0.8**WzwGame.Level*1000;
+let Food = {x: Math.floor(Math.random() * Cols),y: Math.floor(Math.random() * Rows)};
+LoopSnake();
+function DrawSnake(){
+    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
+    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
+    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
+    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
+    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    Snake.forEach(el => {WzwGame.DrawBlock(el.x, el.y)});
+    Gamectx.fillStyle = '#b30';
+    WzwGame.DrawBlock(Food.x, Food.y);
+    WzwGame.DrawBlock(Snake[0].x, Snake[0].y)
+    Gamectx.fillStyle = '#000';
 }
-loadGame();
+function LoopSnake(){
+    if(Date.now()-lastTime > MoveSpeek){
+        WzwGame.SaveItem("Snake",[Snake,Direction]);MoveSnake();lastTime = Date.now()}
+    if(Pause)return;
+    requestAnimationFrame(LoopSnake);
+}
+function MoveSnake(){
+    const head = {x: Snake[0].x + Direction.x, y: Snake[0].y + Direction.y};
+    if (head.x < 0 || head.x >= Cols || head.y < 0 || head.y >= Rows){//检查撞墙
+        Pause=true;WzwGame.ClearItem("Snake");setTimeout(()=>{WzwGame.init()},600);return;}
+    for (let i = 0; i < Snake.length; i++){//检查撞自己
+        if (head.x === Snake[i].x && head.y === Snake[i].y){
+            Pause=true;WzwGame.ClearItem("Snake");setTimeout(()=>{WzwGame.init()},600);return;}}
+    if (head.x === Food.x && head.y === Food.y) {WzwGame.Score += 100;// 检查是否吃到食物
+        WzwGame.Best[WzwGame.Gameindex]=WzwGame.Score>WzwGame.Best[WzwGame.Gameindex]?
+            WzwGame.Score:WzwGame.Best[WzwGame.Gameindex];
+        if(WzwGame.Score>=1000*(WzwGame.Level+1)){
+            WzwGame.Level++;MoveSpeek=MoveSpeek===60?60:0.8**WzwGame.Level*1000;}
+        Food = {x: Math.floor(Math.random() * Cols),y: Math.floor(Math.random() * Rows)};
+    }else{Snake.pop();}
+    Snake.unshift(head);DrawSnake();
+}
+document.ontouchstart=(e) =>{TouchSnake(e.target.getAttribute("key"))};
+document.onmousedown=(e) =>{TouchSnake(e.target.getAttribute("key"))};
+document.ontouchend=(e) =>{if(e.target.getAttribute("key")==="rotate")MoveSpeek=0.8**WzwGame.Level*1000};
+function TouchSnake(key){
+    switch (key){
+        case "reset": Pause=true;WzwGame.ClearItem("Snake");WzwGame.init();break;
+        case "start":Pause=Pause?false:true;LoopSnake();DrawSnake();break;
+        case "rotate":lastTime=0;MoveSpeek=60;break;
+        case "up":if(Direction.y===0 && !Pause)Direction ={x: 0, y: -1};lastTime=0;break;
+        case "down":if(Direction.y===0 && !Pause)Direction ={x: 0, y: 1};lastTime=0;break;
+        case "left":if(Direction.x===0 && !Pause)Direction ={x: -1, y: 0};lastTime=0;break;
+        case "right":if(Direction.x===0 && !Pause)Direction ={x: 1, y: 0};lastTime=0;break;}
+}}
+window.onload = () => WzwGame.init();
 </script>
 </body>
 </html>
