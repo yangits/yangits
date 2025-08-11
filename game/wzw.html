@@ -77,7 +77,7 @@ const Gamectx = Gamecanvas.getContext('2d', {willReadFrequently: true});
 const Block = 16,Cols = 10,Rows = 20;
 Gamecanvas.width = Block * (Cols+5);
 Gamecanvas.height = Block * Rows;
-Gamectx.font = "20px Arial";Gamectx.lineWidth=2;
+Gamectx.font = "18px Arial";Gamectx.lineWidth=2;
 document.addEventListener('touchstart', (e) =>{e.preventDefault();
     e.target.closest('button').classList.add('active');}, {passive:false});
 document.addEventListener('touchend', (e) =>{
