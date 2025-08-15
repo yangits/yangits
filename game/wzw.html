@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="renderer" content="webkit">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>王中王游戏</title>
+<title>王中王掌机</title>
 <style>
 body{
     width: 100%;
@@ -20,22 +20,14 @@ body{
     background: linear-gradient(145deg, #dc0, #cb0);
     width: 60px;
     height: 60px;
-    box-shadow:  4px 4px 8px #555,
-    -4px -4px 8px #7dd;
+    box-shadow:  4px 4px 8px #555,-4px -4px 8px #7dd;
     margin: 0px 2px;
 }
-.small{
-    width: 26px;
-    height: 26px;
-}
-.big{
-    width: 85px;
-    height: 85px;
-}
+.small{width: 26px;height: 26px;}
+.big{width: 85px;height: 85px;}
 .active{
     background: linear-gradient(145deg, #a90, #cb0);
-    box-shadow:  2px 2px 4px #555,
-    -2px -2px 4px #7dd;
+    box-shadow:  2px 2px 4px #555,-2px -2px 4px #7dd;
 }
 canvas{
     background-color: #9aa;
@@ -57,19 +49,19 @@ canvas{
 <body>
 <canvas id="game"></canvas>
 <div style="text-align: right;margin-right: 10%;">
-    <button class="btn small" key="start" id="start"></button>
+    <button class="btn small" id="start"></button>
     <span style="font-size: 12px;">开始</span>
-    <button class="btn small" key="reset"></button>
+    <button class="btn small" id="reset"></button>
     <span style="font-size: 12px;">复位</span>
 </div>
 <div class="controller">
     <div>
-        <button class="btn" key="up">上</button><br>
-        <button class="btn" key="left">左</button>&emsp;&emsp;
-        <button class="btn" key="right">右</button><br>
-        <button class="btn" key="down">下</button>
+        <button class="btn" id="up">上</button><br>
+        <button class="btn" id="left">左</button>&emsp;&emsp;
+        <button class="btn" id="right">右</button><br>
+        <button class="btn" id="down">下</button>
     </div>
-    <button class="btn big" key="rotate" id="rotate">旋转</button>
+    <button class="btn big" id="rotate">旋转</button>
 </div>
 <script>
 const Gamecanvas = document.getElementById('game');
@@ -83,20 +75,20 @@ document.addEventListener('touchstart', (e) =>{e.preventDefault();
 document.addEventListener('touchend', (e) =>{
     e.target.closest('button').classList.remove('active');});
 const WzwGame = {
-Games: ['俄罗斯方块','贪吃蛇'], Gameindex: 0,
+Games: ['俄罗斯方块','贪吃蛇','方块弹珠','方块赛车','方块坦克'], Gameindex: 0,
 Score: null, Level: null, Best: null, CanvasData: null,
+isPressed: {},startTime: {},
 init(){
     this.Best=this.Itemval("Best",Array(this.Games.length).fill(0));
     this.Gameindex=this.Itemval("Gameindex",this.Gameindex);
     this.Score=this.Itemval("Score",0);this.Level=this.Itemval("Level",0);this.DrawGame();
-    document.ontouchstart=(e) =>{this.TouchGame(e.target.getAttribute("key"))};
-    document.onmousedown=(e) =>{this.TouchGame(e.target.getAttribute("key"))};
+    document.ontouchstart=(e) =>{this.TouchGame(e.target.id)};
     if(localStorage.getItem("Gameindex")){this.TouchGame("start")};
 },
 TouchGame(key){
     switch (key){
     case "start":localStorage.setItem("Gameindex",this.Gameindex);
-        [TetrisGame,SnakeGame][this.Gameindex]();break;
+        [TetrisGame,SnakeGame,MarbleGame,RacingGame,TankGame][this.Gameindex]();break;
     case "rotate":this.Gameindex=this.Gameindex<this.Games.length-1?
         this.Gameindex+1:0;this.DrawGame();break;
     case "left":{this.Level=this.Level>0?this.Level-1:15;this.DrawGame()};break;
@@ -117,9 +109,30 @@ SaveItem(name,val){
 Itemval(name,val){
     return localStorage.getItem(name)?JSON.parse(localStorage.getItem(name)):val;
 },
+LongPress(Callback,key,num){
+    Callback(num);this.isPressed[key]= true;
+    clearTimeout(this.startTime[key]);
+    this.startTime[key]=setTimeout(function Loop(){
+        if(!WzwGame.isPressed[key])return;
+        Callback(num);setTimeout(Loop, 12);
+    }, 150);
+},
+GetScore(){
+    this.Score += 100;
+    this.Best[this.Gameindex]=this.Score>this.Best[this.Gameindex]?
+        this.Score:this.Best[this.Gameindex];
+    if(this.Score>=10000*(this.Level+1)){
+        this.Level++;MoveSpeek=0.8**this.Level*1000}
+},
 DrawBlock(x, y){
     Gamectx.fillRect((x+0.3) * Block, (y+0.3) * Block, Block*0.4, Block*0.4);
     Gamectx.strokeRect((x+0.125) * Block, (y+0.125) * Block, Block*0.75, Block*0.75);
+},
+GameOver(key){
+    document.ontouchstart=(e) =>{};
+    for(let i=0;i<Rows;i++){
+        for(let j=0;j<Cols;j++){setTimeout(()=>{this.DrawBlock(j, i)},i*20)};}
+    setTimeout(()=>{this.ClearItem(key);this.init()},Rows*30);
 },
 DrawGame(){
     Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
@@ -134,14 +147,14 @@ DrawGame(){
     this.CanvasData= Gamectx.getImageData(0, 0, Gamecanvas.width, Gamecanvas.height);
     Gamectx.fillText(this.Score, Block * Cols+10,Block*3.5);
     Gamectx.fillText(this.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(this.Best[this.Gameindex], Block * Cols+10,Block*15.5);
+    Gamectx.fillText(this.Best[this.Gameindex]=!this.Best[this.Gameindex]?0:this.Best[this.Gameindex], Block * Cols+10,Block*15.5);
     Gamectx.fillText(this.Games[this.Gameindex], Block * 5-Gamectx.measureText(this.Games[this.Gameindex]).width/2,Block*5);
 }};
 function TetrisGame(){//俄罗斯方块
-let CurPiece,NextPiece,Pause=false,lastTime=Infinity;
-let arena =WzwGame.Itemval("arena",Array(Rows).fill().map(() => Array(Cols).fill(0)));
-let DownSpeek=0.8**WzwGame.Level*1000;
-const Pieces = [
+let CurShape,NextShape,Pause=false,lastTime=Infinity;
+let Tetris =WzwGame.Itemval("Tetris",Array(Rows).fill().map(() => Array(Cols).fill(0)));
+let MoveSpeek=0.8**WzwGame.Level*1000;
+const Shapes = [
     [[0, 0], [1,0], [0,-1], [1,-1]],// O
     [[-1,0], [0,0], [1,0], [2,0]],// I
     [[-1,-1], [0,0], [1,0], [0,-1]],// Z
@@ -149,10 +162,11 @@ const Pieces = [
     [[-1,0], [0,0], [1,0], [1,-1]],// J
     [[-1,0], [0,0], [1,0], [-1,-1]],// L
     [[-1,0], [0,0], [0,-1], [1,-1]]];// S
-CurPiece = createPiece();NextPiece = createPiece();LoopTetris();
-function createPiece(){
-    const Piece = Pieces[Math.floor(Math.random() * Pieces.length)];
-    return {shape: Piece,x: Cols/2-1,y: 0};
+CurShape = CreateShape();NextShape = CreateShape();
+LoopTetris();DrawTetris();
+function CreateShape(){
+    const Shape = Shapes[Math.floor(Math.random() * Shapes.length)];
+    return {obj: Shape, x: Cols/2-1, y: 0};
 };
 function DrawTetris(){
     Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
@@ -160,100 +174,81 @@ function DrawTetris(){
     Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
     Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
     Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
-    arena.forEach((row, y) => {row.forEach((val, x) => {
+    Tetris.forEach((row, y) => {row.forEach((val, x) => {
         if(val)WzwGame.DrawBlock(x, y)});});
     if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
-    NextPiece.shape.forEach(Block => {
-        WzwGame.DrawBlock(Cols + 1.5 + Block[0],  10 + Block[1]);});
-    CurPiece.shape.forEach(Block =>{
-        WzwGame.DrawBlock(CurPiece.x + Block[0], CurPiece.y + Block[1]);});
+    NextShape.obj.forEach(item => {
+        WzwGame.DrawBlock(Cols + 1.5 + item[0],  10 + item[1]);});
+    CurShape.obj.forEach(item =>{
+        WzwGame.DrawBlock(CurShape.x + item[0], CurShape.y + item[1]);});
 };
-function isMove(Piece, offsetX, offsetY){
-    return Piece.shape.some(Block => {
-        const x = Piece.x + Block[0] + offsetX;
-        const y = Piece.y + Block[1] + offsetY;
-        return x < 0 || x >= Cols || y >= Rows || (y >= 0 && arena[y][x]);
+function isMove(Shape, offX, offY){
+    return Shape.obj.some(item => {
+        const x = Shape.x + item[0] + offX;
+        const y = Shape.y + item[1] + offY;
+        return x < 0 || x >= Cols || y >= Rows || (y >= 0 && Tetris[y][x]);
     });
 };
-function mergePiece(){
-    CurPiece.shape.forEach(Block => {
-        const x = CurPiece.x + Block[0];
-        const y = CurPiece.y + Block[1];
-        if (y >= 0) arena[y][x] = 1;
+function ClearLines(){
+    CurShape.obj.forEach(item => {//合并
+        const x = CurShape.x + item[0];
+        const y = CurShape.y + item[1];
+        if (y >= 0) Tetris[y][x] = 1;
     });
-};
-function clearLines(){
     let lines = 0;
-    outer: for (let y = Rows - 1; y >= 0; y--) {
+    outer: for (let y = Rows - 1; y >= 0; y--) {//消行
         for (let x = 0; x < Cols; x++) {
-            if (!arena[y][x]) continue outer;}
-        const row = arena.splice(y, 1)[0].fill(0);
-        arena.unshift(row);lines++;y++;
+            if (!Tetris[y][x]) continue outer;}
+        const row = Tetris.splice(y, 1)[0].fill(0);
+        Tetris.unshift(row);lines++;y++;
     }
     WzwGame.Score += [0, 100, 300, 500, 800][lines];
-    WzwGame.Best[WzwGame.Gameindex]=WzwGame.Score>WzwGame.Best[WzwGame.Gameindex]?
-        WzwGame.Score:WzwGame.Best[WzwGame.Gameindex];
-    if(WzwGame.Score>=10000*(WzwGame.Level+1)){
-        WzwGame.Level++;DownSpeek=0.8**WzwGame.Level*1000}
+    WzwGame.Score -=100;WzwGame.GetScore();
 };
-function rotatePiece(){
-    if(CurPiece.shape==Pieces[0])return;
-    const rotated = CurPiece.shape.map(Block => [-Block[1], Block[0]]);
-    const original = CurPiece.shape;
-    CurPiece.shape = rotated;
+function MoveRotate(){
+    if(CurShape.obj==Shapes[0] || Pause)return;
+    const rotated = CurShape.obj.map(item => [-item[1], item[0]]);
+    const original = CurShape.obj;
+    CurShape.obj = rotated;
     const offsets = [0, 1, -1,2,-2];
     for (let offset of offsets){
-        CurPiece.x += offset;
-        if (!isMove(CurPiece, 0, 0)) return;
-        CurPiece.x -= offset;
+        CurShape.x += offset;
+        if (!isMove(CurShape, 0, 0)){DrawTetris();return};
+        CurShape.x -= offset;
     }
-    CurPiece.shape = original;
+    CurShape.obj = original; 
 };
-function moveLeft(){if(!isMove(CurPiece, -1, 0))CurPiece.x--;};
-function moveRight(){if(!isMove(CurPiece, 1, 0))CurPiece.x++;};
+function MoveLeft(){if (Pause || isMove(CurShape, -1, 0))return;CurShape.x--;DrawTetris();};
+function MoveRight(){if (Pause || isMove(CurShape, 1, 0))return;CurShape.x++;DrawTetris();};
 function LoopTetris(){
-    if(Date.now()-lastTime > DownSpeek){
-        if(!isMove(CurPiece, 0, 1)){CurPiece.y++;
-        }else{DownSpeek=0.8**WzwGame.Level*1000;
-            mergePiece();clearLines();
-            CurPiece = NextPiece;
-            NextPiece = createPiece();
-            WzwGame.SaveItem("arena",arena);
-            if (isMove(CurPiece, 0, 0)){
-                Pause=true;WzwGame.ClearItem("arena");
-                setTimeout(()=>{WzwGame.init()},500);};
-        };lastTime = Date.now();
+    if(Date.now()-lastTime > MoveSpeek){
+        if(!isMove(CurShape, 0, 1)){CurShape.y++;
+        }else{MoveSpeek=0.8**WzwGame.Level*1000;
+            ClearLines();CurShape = NextShape;
+            NextShape = CreateShape();
+            WzwGame.SaveItem("Tetris",Tetris);
+            if (isMove(CurShape, 0, 0)){TouchTeris("reset");};
+        };DrawTetris();lastTime = Date.now();
     }
-    if(Pause)return;DrawTetris();
-    requestAnimationFrame(LoopTetris);
+    if(Pause)return;requestAnimationFrame(LoopTetris);
 };
-let isPressed = {},startTime={};
-function startclick(callback,key){
-    if (Pause) return;callback();
-    isPressed[key]= true;
-    function startLoop(){
-        if(!isPressed[key])return;
-        callback();setTimeout(startLoop, 12);}
-    clearTimeout(startTime[key]);
-    startTime[key]= setTimeout(startLoop, 150);
-};
-document.ontouchstart=(e) =>{TouchTeris(e.target.getAttribute("key"))};
-document.onmousedown=(e) =>{TouchTeris(e.target.getAttribute("key"))};
-document.ontouchend=(e) =>{DownSpeek=0.8**WzwGame.Level*1000;isPressed[e.target.getAttribute("key")]= false;};
+document.ontouchstart=(e) =>{TouchTeris(e.target.id)};
+document.ontouchend=(e) =>{WzwGame.isPressed[e.target.id]= false;
+    if(e.target.id==="down"){MoveSpeek=0.8**WzwGame.Level*1000}};
 function TouchTeris(key){
     switch (key){
-    case "reset":Pause=true;WzwGame.ClearItem("arena");WzwGame.init();break;
+    case "reset":Pause=true;WzwGame.GameOver("Tetris");break;
     case "start":Pause=Pause?false:true;LoopTetris();DrawTetris();break;
-    case "rotate":case "up":startclick(rotatePiece,key);break;
-    case "down":lastTime=0;DownSpeek=12;break;
-    case "left":startclick(moveLeft,key);break;
-    case "right":startclick(moveRight,key);break;}
-}}
+    case "rotate":case "up":WzwGame.LongPress(MoveRotate,key);break;
+    case "down":lastTime=0;MoveSpeek=12;break;
+    case "left":WzwGame.LongPress(MoveLeft,key);break;
+    case "right":WzwGame.LongPress(MoveRight,key);break;}
+}};
 function SnakeGame(){//贪吃蛇
 let [Snake,Direction] = WzwGame.Itemval("Snake",[[{x: 5, y: 5},{x: 5, y: 4},{x: 5, y: 3}],{x: 0, y: 1}]);
-let Pause=false,lastTime=-Infinity,MoveSpeek= 0.8**WzwGame.Level*1000;
+let Pause=false,lastTime=Infinity,MoveSpeek= 0.8**WzwGame.Level*1000;
 let Food = {x: Math.floor(Math.random() * Cols),y: Math.floor(Math.random() * Rows)};
-LoopSnake();
+LoopSnake();DrawSnake();
 function DrawSnake(){
     Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
     Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
@@ -261,47 +256,226 @@ function DrawSnake(){
     Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
     Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
     if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
-    Snake.forEach(el => {WzwGame.DrawBlock(el.x, el.y)});
+    Snake.forEach(item => {WzwGame.DrawBlock(item.x, item.y)});
     Gamectx.fillStyle = '#b30';
     WzwGame.DrawBlock(Food.x, Food.y);
     WzwGame.DrawBlock(Snake[0].x, Snake[0].y)
     Gamectx.fillStyle = '#000';
-}
+};
 function LoopSnake(){
     if(Date.now()-lastTime > MoveSpeek){
-        WzwGame.SaveItem("Snake",[Snake,Direction]);MoveSnake();lastTime = Date.now()}
-    if(Pause)return;
-    requestAnimationFrame(LoopSnake);
-}
+        WzwGame.SaveItem("Snake",[Snake,Direction]);
+        MoveSnake();DrawSnake();lastTime = Date.now()}
+    if(Pause)return;requestAnimationFrame(LoopSnake);
+};
 function MoveSnake(){
     const head = {x: Snake[0].x + Direction.x, y: Snake[0].y + Direction.y};
     if (head.x < 0 || head.x >= Cols || head.y < 0 || head.y >= Rows){//检查撞墙
-        Pause=true;WzwGame.ClearItem("Snake");setTimeout(()=>{WzwGame.init()},600);return;}
+        TouchSnake("reset");return;}
     for (let i = 0; i < Snake.length; i++){//检查撞自己
-        if (head.x === Snake[i].x && head.y === Snake[i].y){
-            Pause=true;WzwGame.ClearItem("Snake");setTimeout(()=>{WzwGame.init()},600);return;}}
-    if (head.x === Food.x && head.y === Food.y) {WzwGame.Score += 100;// 检查是否吃到食物
-        WzwGame.Best[WzwGame.Gameindex]=WzwGame.Score>WzwGame.Best[WzwGame.Gameindex]?
-            WzwGame.Score:WzwGame.Best[WzwGame.Gameindex];
-        if(WzwGame.Score>=1000*(WzwGame.Level+1)){
-            WzwGame.Level++;MoveSpeek=MoveSpeek===60?60:0.8**WzwGame.Level*1000;}
+        if (head.x === Snake[i].x && head.y === Snake[i].y){TouchSnake("reset");return;}}
+    if (head.x === Food.x && head.y === Food.y) {WzwGame.GetScore();// 检查是否吃到食物
         Food = {x: Math.floor(Math.random() * Cols),y: Math.floor(Math.random() * Rows)};
     }else{Snake.pop();}
-    Snake.unshift(head);DrawSnake();
-}
-document.ontouchstart=(e) =>{TouchSnake(e.target.getAttribute("key"))};
-document.onmousedown=(e) =>{TouchSnake(e.target.getAttribute("key"))};
-document.ontouchend=(e) =>{if(e.target.getAttribute("key")==="rotate")MoveSpeek=0.8**WzwGame.Level*1000};
+    Snake.unshift(head);
+};
+document.ontouchstart=(e) =>{TouchSnake(e.target.id)};
+document.ontouchend=(e) =>{if(e.target.id==="rotate"){MoveSpeek=0.8**WzwGame.Level*1000}};
 function TouchSnake(key){
     switch (key){
-        case "reset": Pause=true;WzwGame.ClearItem("Snake");WzwGame.init();break;
-        case "start":Pause=Pause?false:true;LoopSnake();DrawSnake();break;
-        case "rotate":lastTime=0;MoveSpeek=60;break;
-        case "up":if(Direction.y===0 && !Pause)Direction ={x: 0, y: -1};lastTime=0;break;
-        case "down":if(Direction.y===0 && !Pause)Direction ={x: 0, y: 1};lastTime=0;break;
-        case "left":if(Direction.x===0 && !Pause)Direction ={x: -1, y: 0};lastTime=0;break;
-        case "right":if(Direction.x===0 && !Pause)Direction ={x: 1, y: 0};lastTime=0;break;}
-}}
+    case "reset": Pause=true;WzwGame.GameOver("Snake");break;
+    case "start":Pause=Pause?false:true;LoopSnake();DrawSnake();break;
+    case "rotate":lastTime=0;MoveSpeek=60;break;
+    case "up":if(Direction.y===0 && !Pause)Direction ={x: 0, y: -1};lastTime=0;break;
+    case "down":if(Direction.y===0 && !Pause)Direction ={x: 0, y: 1};lastTime=0;break;
+    case "left":if(Direction.x===0 && !Pause)Direction ={x: -1, y: 0};lastTime=0;break;
+    case "right":if(Direction.x===0 && !Pause)Direction ={x: 1, y: 0};lastTime=0;break;}
+}};
+function MarbleGame(){//方块弹珠
+let Marble=WzwGame.Itemval("Marble",Array(5).fill().map(() => Array(Cols).fill(1)));
+let Paddle = [{x: 4, y: Rows-1},{x: 5, y: Rows-1},{x: 6, y: Rows-1}];
+let Direction ={x: 1, y: -1},Ball = {x: 5, y: Rows-2};
+let isBall=true,Pause=false,lastTime=Infinity,MoveSpeek= 0.8**WzwGame.Level*1000;
+LoopMarble();DrawMarble();
+function DrawMarble(){
+    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
+    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
+    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
+    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
+    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    Marble.forEach((row, y) => {row.forEach((val, x) => {
+        if(val)WzwGame.DrawBlock(x, y)});});
+    Paddle.forEach(item => {WzwGame.DrawBlock(item.x, item.y)});
+    Gamectx.fillStyle = '#b30';
+    WzwGame.DrawBlock(Ball.x, Ball.y);
+    Gamectx.fillStyle = '#000';
+};
+function MoveLeft(){if(Pause || Paddle[0].x<=0)return;
+    if(Ball.y===Rows-2 &&  Ball.x>=Paddle[0].x && Ball.x<=Paddle[2].x)Ball.x-=1;
+    Paddle.forEach(item => {item.x-=1});DrawMarble();};
+function MoveRight(){if(Pause || Paddle[2].x>=Cols-1)return;
+    if(Ball.y===Rows-2 &&  Ball.x>=Paddle[0].x && Ball.x<=Paddle[2].x)Ball.x+=1;
+    Paddle.forEach(item => {item.x+=1});DrawMarble();};
+function LoopMarble(){
+    if(Date.now()-lastTime > MoveSpeek){
+        WzwGame.SaveItem("Marble",Marble);isBallMove();
+        Ball.x+=Direction.x;Ball.y+=Direction.y;
+        DrawMarble();lastTime = Date.now();
+    }
+    if(Pause)return;requestAnimationFrame(LoopMarble);
+};
+function isBallMove(){
+    if(Ball.x-1<0){Direction.x=1};
+    if(Ball.x+1>=Cols){Direction.x=-1};
+    if(Ball.y-1<0){Direction.y=1};
+    if(Ball.y<Marble.length && Marble[Ball.y][Ball.x]===1){
+        Marble[Ball.y][Ball.x]=0;WzwGame.GetScore();Direction.y=1;
+        const isAllZero=Marble.every(arr => arr.every(item => item === 0));
+        if(isAllZero){Marble=Array(5).fill().map(() => Array(Cols).fill(1))};
+    }; 
+    if(Ball.y===Rows-2 && (Ball.x+Direction.x>=Paddle[0].x || Ball.x>=Paddle[0].x)
+        && (Ball.x<=Paddle[2].x || Ball.x+Direction.x<=Paddle[2].x)){Direction.y=-1};
+    if(Ball.y+1>=Rows){TouchMarble("reset")};
+};
+document.ontouchstart=(e) =>{TouchMarble(e.target.id)};
+document.ontouchend=(e) =>{WzwGame.isPressed[e.target.id]= false;
+    if(e.target.id==="rotate"){MoveSpeek=0.8**WzwGame.Level*1000}};
+function TouchMarble(key){
+    switch (key){
+    case "reset": Pause=true;WzwGame.GameOver("Marble");break;
+    case "start": Pause=Pause?false:true;LoopMarble();DrawMarble();break;
+    case "rotate": lastTime=0;MoveSpeek=60;break;
+    case "left": WzwGame.LongPress(MoveLeft,key);break;
+    case "right":WzwGame.LongPress(MoveRight,key);break;}
+}};
+function RacingGame(){//方块赛车
+let Pause=false,lastTime=Infinity,Outer=0;
+let MoveSpeek=0.8**WzwGame.Level*1000;
+const RoleBlock=[[-1,0], [0,0], [1,0], [0,-1],[0,1],[-1,2],[1,2]]
+let Role = CreateRole(Rows-3);
+let Racing=WzwGame.Itemval("Racing",[CreateRole(-2)]);
+LoopRacing();DrawRacing();
+function CreateRole(y){let x=Math.random()>0.5?6:3; return { x , y}};
+function DrawRacing(){
+    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
+    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
+    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
+    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
+    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    for(let i=0;i<Rows;i++){
+        if(Outer!=i%4){WzwGame.DrawBlock(0, i);WzwGame.DrawBlock(9, i)}};
+    Racing.forEach(obj => {RoleBlock.forEach(item => {
+        WzwGame.DrawBlock(obj.x+item[0],  obj.y+item[1])})});
+    RoleBlock.forEach(item => {
+        WzwGame.DrawBlock(Role.x+item[0],  Role.y+item[1])});
+};
+function LoopRacing(){
+    if(Date.now()-lastTime > MoveSpeek){
+        if(Racing[0].y > 6){
+            Racing.unshift(CreateRole(-3));}
+        if(Racing[Racing.length-1].y >= Rows){
+            Racing.pop();WzwGame.GetScore()}
+        Outer=(Outer+1)%4;WzwGame.SaveItem("Racing",Racing);
+        Racing.forEach(obj =>{obj.y++});isBump();
+        DrawRacing();lastTime = Date.now();
+    }
+    if(Pause)return;requestAnimationFrame(LoopRacing);
+};
+function isBump(){
+    if(Racing[Racing.length-1].y <= Rows && Racing[Racing.length-1].y >= Rows-6
+        && Racing[Racing.length-1].x===Role.x){TouchRacing("reset")}
+};
+document.ontouchstart=(e) =>{TouchRacing(e.target.id)};
+document.ontouchend=(e) =>{if(e.target.id==="rotate"){MoveSpeek=0.8**WzwGame.Level*1000}};
+function TouchRacing(key){
+    switch (key){
+    case "reset": Pause=true;WzwGame.GameOver("Racing");break;
+    case "start": Pause=Pause?false:true;LoopRacing();DrawRacing();break;
+    case "rotate": lastTime=0;MoveSpeek=60;break;
+    case "left": if (Pause) return;Role.x=3;isBump();DrawRacing();break;
+    case "right":if (Pause) return;Role.x=6;isBump();DrawRacing();break;}
+}};
+function TankGame(){//方块坦克
+let Pause=false,lastTime=0;
+let MoveSpeek=0.8**WzwGame.Level*1000;
+const RoleBlock=[[[0,-1], [0,0], [-1,0], [1,0], [1,1], [-1,1]],//上
+    [[0,1], [0,0], [-1,0],[1, 0], [-1,-1],[1,-1]],//下
+    [[-1,0],[0,0], [0,1], [0,-1], [1, 1], [1,-1]],//左
+    [[1,0], [0,0], [0,1], [0,-1], [-1, 1],[-1,-1]]];//右
+const Nooks=[[1,1],[1,Rows-2],[Cols-2,1],[Cols-2,Rows-2]];
+const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+const Tank= WzwGame.Itemval("Tank",[CreateRole(Cols/2, Rows/2),
+        CreateRole(1,1),CreateRole(1,Rows-2),CreateRole(Cols-2,1),]);
+LoopTank();DrawTank();
+function CreateRole(x, y){
+    let dir= Math.floor(Math.random() * 4);
+    return { x , y , dir}};
+function DrawTank(){
+    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
+    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
+    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
+    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
+    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    Tank.forEach(obj => {if(obj.dir===null)return;
+        RoleBlock[obj.dir].forEach(item => {
+        WzwGame.DrawBlock(obj.x+item[0],  obj.y+item[1])})});
+};
+function LoopTank(){
+    if(Date.now()-lastTime > MoveSpeek){
+        Tank.forEach((obj,index) => {if(index===0)return;
+            if(obj.dir===null){
+                (function loop(){
+                    let i=Math.floor(Math.random() * 4);
+                    Tank[index]=CreateRole(Nooks[i][0],Nooks[i][1]);
+                    if(Check())loop();}())
+            }else{obj.dir= Math.random()>0.6?Math.floor(Math.random() * 4):obj.dir;
+                isMove(obj)}
+        })
+        WzwGame.SaveItem("Tank",Tank);
+        DrawTank();lastTime = Date.now();
+    }
+    if(Pause)return;requestAnimationFrame(LoopTank);
+};
+function isMove(obj){
+    obj.x+=dirs[obj.dir][0];obj.y+=dirs[obj.dir][1];
+    if(obj.y<1 || obj.y>Rows-2 || obj.x<1 || obj.x>Cols-2 || Check()){
+        obj.x-=dirs[obj.dir][0];obj.y-=dirs[obj.dir][1];}
+};
+function Check(){
+    for (let i=0; i<Tank.length;i++){if(Tank[i].dir===null)continue;
+    for (let j=i+1; j<Tank.length;j++){if(Tank[j].dir===null)continue;
+        if(Math.abs(Tank[i].x-Tank[j].x)+ Math.abs(Tank[i].y-Tank[j].y)<=2){return true}
+    }}return false;
+};
+function Shoot(obj){
+    const Ball = {x:obj.x,y:obj.y,dir:obj.dir};
+    (function loop(){
+        Ball.x+=dirs[Ball.dir][0];
+        Ball.y+=dirs[Ball.dir][1];
+        if(Ball.y<0 || Ball.y>Rows-1 || Ball.x<0 || Ball.x>Cols-1) {DrawTank();return};
+        Tank.forEach((obj,index)=>{if(index===0)return;
+            if(obj.dir != null && Math.abs(obj.x-Ball.x)<=1 && Math.abs(obj.y-Ball.y)<=1){
+                Tank[index].dir=null;WzwGame.GetScore()}})
+        if(Pause) return;DrawTank();WzwGame.DrawBlock(Ball.x,  Ball.y);
+        setTimeout(loop,12);
+    }())
+};
+function Movedir(num){if(Pause) return;Tank[0].dir=num;isMove(Tank[0]);DrawTank()};
+document.ontouchstart=(e) =>{TouchTank(e.target.id)};
+document.ontouchend=(e) =>{WzwGame.isPressed[e.target.id]= false;};
+function TouchTank(key){
+    switch (key){
+    case "reset": Pause=true;WzwGame.GameOver("Tank");break;
+    case "start": Pause=Pause?false:true;LoopTank();DrawTank();break;
+    case "rotate": if(Pause) return;Shoot(Tank[0]); break;
+    case "up": WzwGame.LongPress(Movedir,key,0);break;
+    case "down": WzwGame.LongPress(Movedir,key,1);break;
+    case "left": WzwGame.LongPress(Movedir,key,2);break;
+    case "right":WzwGame.LongPress(Movedir,key,3);break;}
+}};
 window.onload = () => WzwGame.init();
 </script>
 </body>
