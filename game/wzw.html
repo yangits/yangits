@@ -64,35 +64,35 @@ canvas{
     <button class="btn big" id="rotate">旋转</button>
 </div>
 <script>
-const Gamecanvas = document.getElementById('game');
-const Gamectx = Gamecanvas.getContext('2d', {willReadFrequently: true});
+const WzwCan = document.getElementById('game');
+const WzwCtx = WzwCan.getContext('2d', {willReadFrequently: true});
 const Block = 16,Cols = 10,Rows = 20;
-Gamecanvas.width = Block * (Cols+5);
-Gamecanvas.height = Block * Rows;
-Gamectx.font = "18px Arial";Gamectx.lineWidth=2;
+WzwCan.width = Block * (Cols+5);
+WzwCan.height = Block * Rows;
+WzwCtx.font = "18px Arial";WzwCtx.lineWidth=2;
 document.addEventListener('touchstart', (e) =>{e.preventDefault();
     e.target.closest('button').classList.add('active');}, {passive:false});
 document.addEventListener('touchend', (e) =>{
     e.target.closest('button').classList.remove('active');});
-const WzwGame = {
-Games: ['俄罗斯方块','贪吃蛇','方块弹珠','方块赛车','方块坦克'], Gameindex: 0,
+const Wzw = {
+Games: ['俄罗斯方块','贪吃蛇','方块弹珠','方块赛车','方块坦克','青蛙过河'], Gameindex: 0,
 Score: null, Level: null, Best: null, CanvasData: null,
 isPressed: {},startTime: {},
 init(){
-    this.Best=this.Itemval("Best",Array(this.Games.length).fill(0));
-    this.Gameindex=this.Itemval("Gameindex",this.Gameindex);
-    this.Score=this.Itemval("Score",0);this.Level=this.Itemval("Level",0);this.DrawGame();
-    document.ontouchstart=(e) =>{this.TouchGame(e.target.id)};
-    if(localStorage.getItem("Gameindex")){this.TouchGame("start")};
+    Wzw.Best=Wzw.Itemval("Best",Array(Wzw.Games.length).fill(0));
+    Wzw.Gameindex=Wzw.Itemval("Gameindex",Wzw.Gameindex);
+    Wzw.Score=Wzw.Itemval("Score",0);Wzw.Level=Wzw.Itemval("Level",0);Wzw.DrawGame();
+    document.ontouchstart=(e) =>{Wzw.TouchGame(e.target.id)};
+    if(localStorage.getItem("Gameindex")){Wzw.TouchGame("start")};
 },
 TouchGame(key){
     switch (key){
-    case "start":localStorage.setItem("Gameindex",this.Gameindex);
-        [TetrisGame,SnakeGame,MarbleGame,RacingGame,TankGame][this.Gameindex]();break;
-    case "rotate":this.Gameindex=this.Gameindex<this.Games.length-1?
-        this.Gameindex+1:0;this.DrawGame();break;
-    case "left":{this.Level=this.Level>0?this.Level-1:15;this.DrawGame()};break;
-    case "right":{this.Level=this.Level<15?this.Level+1:0;this.DrawGame()};break;}
+    case "start":localStorage.setItem("Gameindex",Wzw.Gameindex);
+        [TetrisGame,SnakeGame,MarbleGame,RacingGame,TankGame,FrogGame][Wzw.Gameindex]();break;
+    case "rotate":Wzw.Gameindex=Wzw.Gameindex<Wzw.Games.length-1?
+        Wzw.Gameindex+1:0;Wzw.DrawGame();break;
+    case "left":{Wzw.Level=Wzw.Level>0?Wzw.Level-1:15;Wzw.DrawGame()};break;
+    case "right":{Wzw.Level=Wzw.Level<15?Wzw.Level+1:0;Wzw.DrawGame()};break;}
 },
 ClearItem(name){
     localStorage.removeItem(name);
@@ -101,59 +101,59 @@ ClearItem(name){
     localStorage.removeItem("Level");
 },
 SaveItem(name,val){
-    localStorage.setItem("Best",JSON.stringify(this.Best));
+    localStorage.setItem("Best",JSON.stringify(Wzw.Best));
     localStorage.setItem(name,JSON.stringify(val));
-    localStorage.setItem("Score",this.Score);
-    localStorage.setItem("Level",this.Level);
+    localStorage.setItem("Score",Wzw.Score);
+    localStorage.setItem("Level",Wzw.Level);
 },
 Itemval(name,val){
     return localStorage.getItem(name)?JSON.parse(localStorage.getItem(name)):val;
 },
 LongPress(Callback,key,num){
-    Callback(num);this.isPressed[key]= true;
-    clearTimeout(this.startTime[key]);
-    this.startTime[key]=setTimeout(function Loop(){
-        if(!WzwGame.isPressed[key])return;
+    Callback(num);Wzw.isPressed[key]= true;
+    clearTimeout(Wzw.startTime[key]);
+    Wzw.startTime[key]=setTimeout(function Loop(){
+        if(!Wzw.isPressed[key])return;
         Callback(num);setTimeout(Loop, 12);
     }, 150);
 },
 GetScore(){
-    this.Score += 100;
-    this.Best[this.Gameindex]=this.Score>this.Best[this.Gameindex]?
-        this.Score:this.Best[this.Gameindex];
-    if(this.Score>=10000*(this.Level+1)){
-        this.Level++;MoveSpeek=0.8**this.Level*1000}
+    Wzw.Score += 100;
+    Wzw.Best[Wzw.Gameindex]=Wzw.Score>Wzw.Best[Wzw.Gameindex]?
+        Wzw.Score:Wzw.Best[Wzw.Gameindex];
+    if(Wzw.Score>=10000*(Wzw.Level+1)){
+        Wzw.Level++;MoveSpeek=0.8**Wzw.Level*1000}
 },
 DrawBlock(x, y){
-    Gamectx.fillRect((x+0.3) * Block, (y+0.3) * Block, Block*0.4, Block*0.4);
-    Gamectx.strokeRect((x+0.125) * Block, (y+0.125) * Block, Block*0.75, Block*0.75);
+    WzwCtx.fillRect((x+0.3) * Block, (y+0.3) * Block, Block*0.4, Block*0.4);
+    WzwCtx.strokeRect((x+0.125) * Block, (y+0.125) * Block, Block*0.75, Block*0.75);
 },
 GameOver(key){
     document.ontouchstart=(e) =>{};
     for(let i=0;i<Rows;i++){
-        for(let j=0;j<Cols;j++){setTimeout(()=>{this.DrawBlock(j, i)},i*20)};}
-    setTimeout(()=>{this.ClearItem(key);this.init()},Rows*30);
+        for(let j=0;j<Cols;j++){setTimeout(()=>{Wzw.DrawBlock(j, i)},i*20)};}
+    setTimeout(()=>{Wzw.ClearItem(key);Wzw.init()},Rows*30);
 },
 DrawGame(){
-    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.fillStyle = '#999';Gamectx.strokeStyle = '#999';
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.fillStyle = '#999';WzwCtx.strokeStyle = '#999';
     for(let i=0;i<Rows;i++){
-        for(let j=0;j<Cols;j++){this.DrawBlock(j, i)};}
-    Gamectx.fillStyle = '#000';Gamectx.strokeStyle = '#000';
-    Gamectx.moveTo(Block * Cols+3,0); Gamectx.lineTo(Block * Cols+3,Block * Rows); Gamectx.stroke(); 
-    Gamectx.fillText("分数", Block * Cols+10,Block*2);
-    Gamectx.fillText("等级", Block * Cols+10,Block*5.5);
-    Gamectx.fillText("最高分", Block * Cols+10,Block*14);
-    this.CanvasData= Gamectx.getImageData(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.fillText(this.Score, Block * Cols+10,Block*3.5);
-    Gamectx.fillText(this.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(this.Best[this.Gameindex]=!this.Best[this.Gameindex]?0:this.Best[this.Gameindex], Block * Cols+10,Block*15.5);
-    Gamectx.fillText(this.Games[this.Gameindex], Block * 5-Gamectx.measureText(this.Games[this.Gameindex]).width/2,Block*5);
+        for(let j=0;j<Cols;j++){Wzw.DrawBlock(j, i)};}
+    WzwCtx.fillStyle = '#000';WzwCtx.strokeStyle = '#000';
+    WzwCtx.moveTo(Block * Cols+3,0); WzwCtx.lineTo(Block * Cols+3,Block * Rows); WzwCtx.stroke(); 
+    WzwCtx.fillText("分数", Block * Cols+10,Block*2);
+    WzwCtx.fillText("等级", Block * Cols+10,Block*5.5);
+    WzwCtx.fillText("最高分", Block * Cols+10,Block*14);
+    Wzw.CanvasData= WzwCtx.getImageData(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex]=!Wzw.Best[Wzw.Gameindex]?0:Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
+    WzwCtx.fillText(Wzw.Games[Wzw.Gameindex], Block * 5-WzwCtx.measureText(Wzw.Games[Wzw.Gameindex]).width/2,Block*5);
 }};
 function TetrisGame(){//俄罗斯方块
 let CurShape,NextShape,Pause=false,lastTime=Infinity;
-let Tetris =WzwGame.Itemval("Tetris",Array(Rows).fill().map(() => Array(Cols).fill(0)));
-let MoveSpeek=0.8**WzwGame.Level*1000;
+let Tetris =Wzw.Itemval("Tetris",Array(Rows).fill().map(() => Array(Cols).fill(0)));
+let MoveSpeek=0.8**Wzw.Level*1000;
 const Shapes = [
     [[0, 0], [1,0], [0,-1], [1,-1]],// O
     [[-1,0], [0,0], [1,0], [2,0]],// I
@@ -169,18 +169,18 @@ function CreateShape(){
     return {obj: Shape, x: Cols/2-1, y: 0};
 };
 function DrawTetris(){
-    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
-    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
-    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.putImageData(Wzw.CanvasData, 0, 0);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
     Tetris.forEach((row, y) => {row.forEach((val, x) => {
-        if(val)WzwGame.DrawBlock(x, y)});});
-    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+        if(val)Wzw.DrawBlock(x, y)});});
+    if(Pause)WzwCtx.fillText("暂停", Block * Cols+10,Block*17.5);
     NextShape.obj.forEach(item => {
-        WzwGame.DrawBlock(Cols + 1.5 + item[0],  10 + item[1]);});
+        Wzw.DrawBlock(Cols + 1.5 + item[0],  10 + item[1]);});
     CurShape.obj.forEach(item =>{
-        WzwGame.DrawBlock(CurShape.x + item[0], CurShape.y + item[1]);});
+        Wzw.DrawBlock(CurShape.x + item[0], CurShape.y + item[1]);});
 };
 function isMove(Shape, offX, offY){
     return Shape.obj.some(item => {
@@ -190,32 +190,30 @@ function isMove(Shape, offX, offY){
     });
 };
 function ClearLines(){
+    MoveSpeek=0.8**Wzw.Level*1000;
     CurShape.obj.forEach(item => {//合并
         const x = CurShape.x + item[0];
         const y = CurShape.y + item[1];
-        if (y >= 0) Tetris[y][x] = 1;
-    });
+        if (y >= 0) Tetris[y][x] = 1});
     let lines = 0;
     outer: for (let y = Rows - 1; y >= 0; y--) {//消行
         for (let x = 0; x < Cols; x++) {
             if (!Tetris[y][x]) continue outer;}
         const row = Tetris.splice(y, 1)[0].fill(0);
-        Tetris.unshift(row);lines++;y++;
-    }
-    WzwGame.Score += [0, 100, 300, 500, 800][lines];
-    WzwGame.Score -=100;WzwGame.GetScore();
+        Tetris.unshift(row);lines++;y++;}
+    Wzw.Score += [0, 100, 300, 500, 800][lines];
+    Wzw.Score -=100;Wzw.GetScore();
 };
 function MoveRotate(){
     if(CurShape.obj==Shapes[0] || Pause)return;
     const rotated = CurShape.obj.map(item => [-item[1], item[0]]);
     const original = CurShape.obj;
     CurShape.obj = rotated;
-    const offsets = [0, 1, -1,2,-2];
+    const offsets = [0, 1, -1, 2, -2];
     for (let offset of offsets){
         CurShape.x += offset;
         if (!isMove(CurShape, 0, 0)){DrawTetris();return};
-        CurShape.x -= offset;
-    }
+        CurShape.x -= offset;}
     CurShape.obj = original; 
 };
 function MoveLeft(){if (Pause || isMove(CurShape, -1, 0))return;CurShape.x--;DrawTetris();};
@@ -223,48 +221,45 @@ function MoveRight(){if (Pause || isMove(CurShape, 1, 0))return;CurShape.x++;Dra
 function LoopTetris(){
     if(Date.now()-lastTime > MoveSpeek){
         if(!isMove(CurShape, 0, 1)){CurShape.y++;
-        }else{MoveSpeek=0.8**WzwGame.Level*1000;
-            ClearLines();CurShape = NextShape;
-            NextShape = CreateShape();
-            WzwGame.SaveItem("Tetris",Tetris);
-            if (isMove(CurShape, 0, 0)){TouchTeris("reset");};
+        }else{ClearLines();CurShape = NextShape;
+            NextShape = CreateShape();Wzw.SaveItem("Tetris",Tetris);
+            if(isMove(CurShape, 0, 0))TouchTeris("reset");
         };DrawTetris();lastTime = Date.now();
     }
     if(Pause)return;requestAnimationFrame(LoopTetris);
 };
 document.ontouchstart=(e) =>{TouchTeris(e.target.id)};
-document.ontouchend=(e) =>{WzwGame.isPressed[e.target.id]= false;
-    if(e.target.id==="down"){MoveSpeek=0.8**WzwGame.Level*1000}};
+document.ontouchend=(e) =>{Wzw.isPressed[e.target.id]= false;
+    if(e.target.id==="down"){MoveSpeek=0.8**Wzw.Level*1000}};
 function TouchTeris(key){
     switch (key){
-    case "reset":Pause=true;WzwGame.GameOver("Tetris");break;
+    case "reset":Pause=true;Wzw.GameOver("Tetris");break;
     case "start":Pause=Pause?false:true;LoopTetris();DrawTetris();break;
-    case "rotate":case "up":WzwGame.LongPress(MoveRotate,key);break;
+    case "rotate":case "up":Wzw.LongPress(MoveRotate,key);break;
     case "down":lastTime=0;MoveSpeek=12;break;
-    case "left":WzwGame.LongPress(MoveLeft,key);break;
-    case "right":WzwGame.LongPress(MoveRight,key);break;}
+    case "left":Wzw.LongPress(MoveLeft,key);break;
+    case "right":Wzw.LongPress(MoveRight,key);break;}
 }};
 function SnakeGame(){//贪吃蛇
-let [Snake,Direction] = WzwGame.Itemval("Snake",[[{x: 5, y: 5},{x: 5, y: 4},{x: 5, y: 3}],{x: 0, y: 1}]);
-let Pause=false,lastTime=Infinity,MoveSpeek= 0.8**WzwGame.Level*1000;
+let [Snake,Direction] = Wzw.Itemval("Snake",[[{x: 5, y: 5},{x: 5, y: 4},{x: 5, y: 3}],{x: 0, y: 1}]);
+let Pause=false,lastTime=Infinity,MoveSpeek= 0.8**Wzw.Level*1000;
 let Food = {x: Math.floor(Math.random() * Cols),y: Math.floor(Math.random() * Rows)};
 LoopSnake();DrawSnake();
 function DrawSnake(){
-    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
-    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
-    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
-    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
-    Snake.forEach(item => {WzwGame.DrawBlock(item.x, item.y)});
-    Gamectx.fillStyle = '#b30';
-    WzwGame.DrawBlock(Food.x, Food.y);
-    WzwGame.DrawBlock(Snake[0].x, Snake[0].y)
-    Gamectx.fillStyle = '#000';
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.putImageData(Wzw.CanvasData, 0, 0);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)WzwCtx.fillText("暂停", Block * Cols+10,Block*17.5);
+    Snake.forEach(item => {Wzw.DrawBlock(item.x, item.y)});
+    WzwCtx.fillStyle = '#b30';Wzw.DrawBlock(Food.x, Food.y);
+    Wzw.DrawBlock(Snake[0].x, Snake[0].y);
+    WzwCtx.fillStyle = '#000';
 };
 function LoopSnake(){
     if(Date.now()-lastTime > MoveSpeek){
-        WzwGame.SaveItem("Snake",[Snake,Direction]);
+        Wzw.SaveItem("Snake",[Snake,Direction]);
         MoveSnake();DrawSnake();lastTime = Date.now()}
     if(Pause)return;requestAnimationFrame(LoopSnake);
 };
@@ -274,16 +269,16 @@ function MoveSnake(){
         TouchSnake("reset");return;}
     for (let i = 0; i < Snake.length; i++){//检查撞自己
         if (head.x === Snake[i].x && head.y === Snake[i].y){TouchSnake("reset");return;}}
-    if (head.x === Food.x && head.y === Food.y) {WzwGame.GetScore();// 检查是否吃到食物
+    if (head.x === Food.x && head.y === Food.y) {Wzw.GetScore();// 检查是否吃到食物
         Food = {x: Math.floor(Math.random() * Cols),y: Math.floor(Math.random() * Rows)};
     }else{Snake.pop();}
     Snake.unshift(head);
 };
 document.ontouchstart=(e) =>{TouchSnake(e.target.id)};
-document.ontouchend=(e) =>{if(e.target.id==="rotate"){MoveSpeek=0.8**WzwGame.Level*1000}};
+document.ontouchend=(e) =>{if(e.target.id==="rotate"){MoveSpeek=0.8**Wzw.Level*1000}};
 function TouchSnake(key){
     switch (key){
-    case "reset": Pause=true;WzwGame.GameOver("Snake");break;
+    case "reset": Pause=true;Wzw.GameOver("Snake");break;
     case "start":Pause=Pause?false:true;LoopSnake();DrawSnake();break;
     case "rotate":lastTime=0;MoveSpeek=60;break;
     case "up":if(Direction.y===0 && !Pause)Direction ={x: 0, y: -1};lastTime=0;break;
@@ -292,24 +287,23 @@ function TouchSnake(key){
     case "right":if(Direction.x===0 && !Pause)Direction ={x: 1, y: 0};lastTime=0;break;}
 }};
 function MarbleGame(){//方块弹珠
-let Marble=WzwGame.Itemval("Marble",Array(5).fill().map(() => Array(Cols).fill(1)));
+let Marble=Wzw.Itemval("Marble",Array(5).fill().map(() => Array(Cols).fill(1)));
 let Paddle = [{x: 4, y: Rows-1},{x: 5, y: Rows-1},{x: 6, y: Rows-1}];
 let Direction ={x: 1, y: -1},Ball = {x: 5, y: Rows-2};
-let isBall=true,Pause=false,lastTime=Infinity,MoveSpeek= 0.8**WzwGame.Level*1000;
+let isBall=true,Pause=false,lastTime=Infinity,MoveSpeek= 0.8**Wzw.Level*1000;
 LoopMarble();DrawMarble();
 function DrawMarble(){
-    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
-    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
-    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
-    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.putImageData(Wzw.CanvasData, 0, 0);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)WzwCtx.fillText("暂停", Block * Cols+10,Block*17.5);
     Marble.forEach((row, y) => {row.forEach((val, x) => {
-        if(val)WzwGame.DrawBlock(x, y)});});
-    Paddle.forEach(item => {WzwGame.DrawBlock(item.x, item.y)});
-    Gamectx.fillStyle = '#b30';
-    WzwGame.DrawBlock(Ball.x, Ball.y);
-    Gamectx.fillStyle = '#000';
+        if(val)Wzw.DrawBlock(x, y)});});
+    Paddle.forEach(item => {Wzw.DrawBlock(item.x, item.y)});
+    WzwCtx.fillStyle = '#b30';Wzw.DrawBlock(Ball.x, Ball.y);
+    WzwCtx.fillStyle = '#000';
 };
 function MoveLeft(){if(Pause || Paddle[0].x<=0)return;
     if(Ball.y===Rows-2 &&  Ball.x>=Paddle[0].x && Ball.x<=Paddle[2].x)Ball.x-=1;
@@ -319,10 +313,9 @@ function MoveRight(){if(Pause || Paddle[2].x>=Cols-1)return;
     Paddle.forEach(item => {item.x+=1});DrawMarble();};
 function LoopMarble(){
     if(Date.now()-lastTime > MoveSpeek){
-        WzwGame.SaveItem("Marble",Marble);isBallMove();
+        Wzw.SaveItem("Marble",Marble);isBallMove();
         Ball.x+=Direction.x;Ball.y+=Direction.y;
-        DrawMarble();lastTime = Date.now();
-    }
+        DrawMarble();lastTime = Date.now();}
     if(Pause)return;requestAnimationFrame(LoopMarble);
 };
 function isBallMove(){
@@ -330,7 +323,7 @@ function isBallMove(){
     if(Ball.x+1>=Cols){Direction.x=-1};
     if(Ball.y-1<0){Direction.y=1};
     if(Ball.y<Marble.length && Marble[Ball.y][Ball.x]===1){
-        Marble[Ball.y][Ball.x]=0;WzwGame.GetScore();Direction.y=1;
+        Marble[Ball.y][Ball.x]=0;Wzw.GetScore();Direction.y=1;
         const isAllZero=Marble.every(arr => arr.every(item => item === 0));
         if(isAllZero){Marble=Array(5).fill().map(() => Array(Cols).fill(1))};
     }; 
@@ -339,48 +332,47 @@ function isBallMove(){
     if(Ball.y+1>=Rows){TouchMarble("reset")};
 };
 document.ontouchstart=(e) =>{TouchMarble(e.target.id)};
-document.ontouchend=(e) =>{WzwGame.isPressed[e.target.id]= false;
-    if(e.target.id==="rotate"){MoveSpeek=0.8**WzwGame.Level*1000}};
+document.ontouchend=(e) =>{Wzw.isPressed[e.target.id]= false;
+    if(e.target.id==="rotate"){MoveSpeek=0.8**Wzw.Level*1000}};
 function TouchMarble(key){
     switch (key){
-    case "reset": Pause=true;WzwGame.GameOver("Marble");break;
+    case "reset": Pause=true;Wzw.GameOver("Marble");break;
     case "start": Pause=Pause?false:true;LoopMarble();DrawMarble();break;
     case "rotate": lastTime=0;MoveSpeek=60;break;
-    case "left": WzwGame.LongPress(MoveLeft,key);break;
-    case "right":WzwGame.LongPress(MoveRight,key);break;}
+    case "left": Wzw.LongPress(MoveLeft,key);break;
+    case "right":Wzw.LongPress(MoveRight,key);break;}
 }};
 function RacingGame(){//方块赛车
 let Pause=false,lastTime=Infinity,Outer=0;
-let MoveSpeek=0.8**WzwGame.Level*1000;
-const RoleBlock=[[-1,0], [0,0], [1,0], [0,-1],[0,1],[-1,2],[1,2]]
+let MoveSpeek=0.8**Wzw.Level*1000;
+const RoleBlock=[[-1,0], [0,0], [1,0], [0,-1],[0,1],[-1,2],[1,2]];
 let Role = CreateRole(Rows-3);
-let Racing=WzwGame.Itemval("Racing",[CreateRole(-2)]);
+let Racing=Wzw.Itemval("Racing",[CreateRole(-2)]);
 LoopRacing();DrawRacing();
 function CreateRole(y){let x=Math.random()>0.5?6:3; return { x , y}};
 function DrawRacing(){
-    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
-    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
-    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
-    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.putImageData(Wzw.CanvasData, 0, 0);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)WzwCtx.fillText("暂停", Block * Cols+10,Block*17.5);
     for(let i=0;i<Rows;i++){
-        if(Outer!=i%4){WzwGame.DrawBlock(0, i);WzwGame.DrawBlock(9, i)}};
+        if(Outer!=i%4){Wzw.DrawBlock(0, i);Wzw.DrawBlock(9, i)}};
     Racing.forEach(obj => {RoleBlock.forEach(item => {
-        WzwGame.DrawBlock(obj.x+item[0],  obj.y+item[1])})});
+        Wzw.DrawBlock(obj.x+item[0],  obj.y+item[1])})});
     RoleBlock.forEach(item => {
-        WzwGame.DrawBlock(Role.x+item[0],  Role.y+item[1])});
+        Wzw.DrawBlock(Role.x+item[0],  Role.y+item[1])});
 };
 function LoopRacing(){
     if(Date.now()-lastTime > MoveSpeek){
         if(Racing[0].y > 6){
             Racing.unshift(CreateRole(-3));}
         if(Racing[Racing.length-1].y >= Rows){
-            Racing.pop();WzwGame.GetScore()}
-        Outer=(Outer+1)%4;WzwGame.SaveItem("Racing",Racing);
+            Racing.pop();Wzw.GetScore()}
+        Outer=(Outer+1)%4;Wzw.SaveItem("Racing",Racing);
         Racing.forEach(obj =>{obj.y++});isBump();
-        DrawRacing();lastTime = Date.now();
-    }
+        DrawRacing();lastTime = Date.now();}
     if(Pause)return;requestAnimationFrame(LoopRacing);
 };
 function isBump(){
@@ -388,10 +380,10 @@ function isBump(){
         && Racing[Racing.length-1].x===Role.x){TouchRacing("reset")}
 };
 document.ontouchstart=(e) =>{TouchRacing(e.target.id)};
-document.ontouchend=(e) =>{if(e.target.id==="rotate"){MoveSpeek=0.8**WzwGame.Level*1000}};
+document.ontouchend=(e) =>{if(e.target.id==="rotate"){MoveSpeek=0.8**Wzw.Level*1000}};
 function TouchRacing(key){
     switch (key){
-    case "reset": Pause=true;WzwGame.GameOver("Racing");break;
+    case "reset": Pause=true;Wzw.GameOver("Racing");break;
     case "start": Pause=Pause?false:true;LoopRacing();DrawRacing();break;
     case "rotate": lastTime=0;MoveSpeek=60;break;
     case "left": if (Pause) return;Role.x=3;isBump();DrawRacing();break;
@@ -399,29 +391,29 @@ function TouchRacing(key){
 }};
 function TankGame(){//方块坦克
 let Pause=false,lastTime=0;
-let MoveSpeek=0.8**WzwGame.Level*1000;
+let MoveSpeek=0.8**Wzw.Level*1000;
 const RoleBlock=[[[0,-1], [0,0], [-1,0], [1,0], [1,1], [-1,1]],//上
     [[0,1], [0,0], [-1,0],[1, 0], [-1,-1],[1,-1]],//下
     [[-1,0],[0,0], [0,1], [0,-1], [1, 1], [1,-1]],//左
     [[1,0], [0,0], [0,1], [0,-1], [-1, 1],[-1,-1]]];//右
 const Nooks=[[1,1],[1,Rows-2],[Cols-2,1],[Cols-2,Rows-2]];
 const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
-const Tank= WzwGame.Itemval("Tank",[CreateRole(Cols/2, Rows/2),
+const Tank= Wzw.Itemval("Tank",[CreateRole(Cols/2, Rows/2),
         CreateRole(1,1),CreateRole(1,Rows-2),CreateRole(Cols-2,1),]);
 LoopTank();DrawTank();
 function CreateRole(x, y){
     let dir= Math.floor(Math.random() * 4);
     return { x , y , dir}};
 function DrawTank(){
-    Gamectx.clearRect(0, 0, Gamecanvas.width, Gamecanvas.height);
-    Gamectx.putImageData(WzwGame.CanvasData, 0, 0);
-    Gamectx.fillText(WzwGame.Score, Block * Cols+10,Block*3.5);
-    Gamectx.fillText(WzwGame.Level, Block * Cols+10,Block*7);
-    Gamectx.fillText(WzwGame.Best[WzwGame.Gameindex], Block * Cols+10,Block*15.5);
-    if(Pause)Gamectx.fillText("暂停", Block * Cols+10,Block*17.5);
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.putImageData(Wzw.CanvasData, 0, 0);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)WzwCtx.fillText("暂停", Block * Cols+10,Block*17.5);
     Tank.forEach(obj => {if(obj.dir===null)return;
         RoleBlock[obj.dir].forEach(item => {
-        WzwGame.DrawBlock(obj.x+item[0],  obj.y+item[1])})});
+        Wzw.DrawBlock(obj.x+item[0],  obj.y+item[1])})});
 };
 function LoopTank(){
     if(Date.now()-lastTime > MoveSpeek){
@@ -434,9 +426,8 @@ function LoopTank(){
             }else{obj.dir= Math.random()>0.6?Math.floor(Math.random() * 4):obj.dir;
                 isMove(obj)}
         })
-        WzwGame.SaveItem("Tank",Tank);
-        DrawTank();lastTime = Date.now();
-    }
+        Wzw.SaveItem("Tank",Tank);
+        DrawTank();lastTime = Date.now();}
     if(Pause)return;requestAnimationFrame(LoopTank);
 };
 function isMove(obj){
@@ -458,25 +449,68 @@ function Shoot(obj){
         if(Ball.y<0 || Ball.y>Rows-1 || Ball.x<0 || Ball.x>Cols-1) {DrawTank();return};
         Tank.forEach((obj,index)=>{if(index===0)return;
             if(obj.dir != null && Math.abs(obj.x-Ball.x)<=1 && Math.abs(obj.y-Ball.y)<=1){
-                Tank[index].dir=null;WzwGame.GetScore()}})
-        if(Pause) return;DrawTank();WzwGame.DrawBlock(Ball.x,  Ball.y);
+                Tank[index].dir=null;Wzw.GetScore()}})
+        if(Pause) return;DrawTank();Wzw.DrawBlock(Ball.x,  Ball.y);
         setTimeout(loop,12);
     }())
 };
 function Movedir(num){if(Pause) return;Tank[0].dir=num;isMove(Tank[0]);DrawTank()};
 document.ontouchstart=(e) =>{TouchTank(e.target.id)};
-document.ontouchend=(e) =>{WzwGame.isPressed[e.target.id]= false;};
+document.ontouchend=(e) =>{Wzw.isPressed[e.target.id]= false;};
 function TouchTank(key){
     switch (key){
-    case "reset": Pause=true;WzwGame.GameOver("Tank");break;
+    case "reset": Pause=true;Wzw.GameOver("Tank");break;
     case "start": Pause=Pause?false:true;LoopTank();DrawTank();break;
     case "rotate": if(Pause) return;Shoot(Tank[0]); break;
-    case "up": WzwGame.LongPress(Movedir,key,0);break;
-    case "down": WzwGame.LongPress(Movedir,key,1);break;
-    case "left": WzwGame.LongPress(Movedir,key,2);break;
-    case "right":WzwGame.LongPress(Movedir,key,3);break;}
+    case "up": Wzw.LongPress(Movedir,key,0);break;
+    case "down": Wzw.LongPress(Movedir,key,1);break;
+    case "left": Wzw.LongPress(Movedir,key,2);break;
+    case "right":Wzw.LongPress(Movedir,key,3);break;}
 }};
-window.onload = () => WzwGame.init();
+function FrogGame(){//青蛙过河
+let Pause=false,lastTime=0;
+let MoveSpeek=0.8**Wzw.Level*1000;
+let Role = {x:Cols/2, y:Rows-1};
+let Frog=Array(Rows-3).fill().map(() => Array(Cols).fill(1));
+Frog.map((val,y)=>{if(y%2===1){val.splice(
+    Math.floor(Math.random() * (Cols-4)),5,...Array(5).fill(0))}});
+LoopFrog();DrawFrog();
+function DrawFrog(){
+    WzwCtx.clearRect(0, 0, WzwCan.width, WzwCan.height);
+    WzwCtx.putImageData(Wzw.CanvasData, 0, 0);
+    WzwCtx.fillText(Wzw.Score, Block * Cols+10,Block*3.5);
+    WzwCtx.fillText(Wzw.Level, Block * Cols+10,Block*7);
+    WzwCtx.fillText(Wzw.Best[Wzw.Gameindex], Block * Cols+10,Block*15.5);
+    if(Pause)WzwCtx.fillText("暂停", Block * Cols+10,Block*17.5);
+    Frog.forEach((row, y) => {row.forEach((val, x) => {
+        if(val)Wzw.DrawBlock(x, y+2)});});
+    WzwCtx.fillStyle = '#b30';Wzw.DrawBlock(Role.x,Role.y);
+    WzwCtx.fillStyle = '#000';
+};
+function LoopFrog(){
+    if(Date.now()-lastTime > MoveSpeek){
+        Frog.forEach((row,y)=>{
+            if(y%4===3)row.push(row.shift());//删第一放最后
+            if(y%4===1)row.unshift(row.pop())});//删最后放第一
+        isBump();DrawFrog();lastTime = Date.now();}
+    if(Pause)return;requestAnimationFrame(LoopFrog);
+};
+function isBump(){
+    if(Role.x<0)Role.x++;if(Role.x>Cols-1)Role.x--;
+    if(Role.y<=0){Role = {x:Cols/2, y:Rows-1};Wzw.Score += 900;
+        Wzw.GetScore();Wzw.SaveItem("Frog","Frog");};
+    if(Role.y<Rows-1 && Role.y>1 && Frog[Role.y-2][Role.x]===1){TouchFrog("reset")};
+};
+document.ontouchstart=(e) =>{TouchFrog(e.target.id)};
+function TouchFrog(key){
+    switch (key){
+    case "reset": Pause=true;Wzw.GameOver("Frog");break;
+    case "start": Pause=Pause?false:true;LoopFrog();DrawFrog();break;
+    case "rotate": if (Pause) return;Role.y-=2;isBump();DrawFrog();break;
+    case "left": if (Pause) return;Role.x--;isBump();DrawFrog();break;
+    case "right":if (Pause) return;Role.x++;isBump();DrawFrog();break;}
+}};
+window.onload = () => Wzw.init();
 </script>
 </body>
 </html>
